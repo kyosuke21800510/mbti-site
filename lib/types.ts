@@ -49,7 +49,6 @@ export interface CachedFortune {
   data: FortuneData;
   dateKey: string;
   mbti: MBTIType;
-  blood: BloodType;
   category: Category;
 }
 
