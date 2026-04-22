@@ -217,7 +217,7 @@ export default function FortuneClient({ mbti, zodiac, name, category }: Props) {
                 className="inline-block text-xs font-black px-3 py-1 rounded-full text-white mb-3"
                 style={{ backgroundColor: catColors.bg }}
               >
-                {section.label}
+                {section.title}
               </span>
               <p className="text-sm font-bold leading-7 text-[#1a1a2e]/75">{section.content}</p>
             </div>

@@ -32,7 +32,7 @@ export const CATEGORY_COLORS: Record<Category, { bg: string; text: string; shado
 };
 
 export interface FortuneSection {
-  label: string;
+  title: string;
   content: string;
 }
 
@@ -59,7 +59,7 @@ export function getISOWeekKey(date: Date = new Date()): string {
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return `${d.getUTCFullYear()}W${String(weekNo).padStart(2, "0")}`;
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
 
 /** ISO month key e.g. "2025-04" */
