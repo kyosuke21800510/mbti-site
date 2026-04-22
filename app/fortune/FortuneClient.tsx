@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   type MBTIType, type ZodiacType, type Category, type FortuneData,
   CATEGORY_LABELS, CATEGORY_EMOJIS, CATEGORY_COLORS, CATEGORIES,
-  getCacheKey, MBTI_TYPES, ZODIAC_TYPES,
+  MBTI_TYPES, ZODIAC_TYPES, getISOWeekKey, getISOMonthKey,
 } from "@/lib/types";
 
 interface Props {
@@ -15,21 +15,24 @@ interface Props {
   category: string;
 }
 
-function getFromCache(key: string): FortuneData | null {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed as FortuneData;
-  } catch {
-    return null;
-  }
+function getFortuneFilePath(category: Category): string {
+  const key = category === "monthly" ? getISOMonthKey() : getISOWeekKey();
+  return `/fortunes/${key}.json`;
 }
 
-function saveToCache(key: string, data: FortuneData) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch { /* ignore */ }
+async function fetchFromJson(
+  mbti: string,
+  zodiac: string,
+  category: Category,
+): Promise<FortuneData> {
+  const filePath = getFortuneFilePath(category);
+  const res = await fetch(filePath, { cache: "force-cache" });
+  if (!res.ok) throw new Error(`運勢データが見つかりません (${filePath})`);
+  const json = await res.json() as Record<string, FortuneData>;
+  const key = `${mbti}_${zodiac}`;
+  const data = json[key];
+  if (!data) throw new Error(`${key} のデータがありません`);
+  return data;
 }
 
 function XShareButton({ mbti, zodiac, name, category, keyword, luckyNumber }: {
@@ -73,32 +76,16 @@ export default function FortuneClient({ mbti, zodiac, name, category }: Props) {
     setError(null);
     setVisible(false);
 
-    const cacheKey = getCacheKey(mbti, zodiac, category);
-    const cached = getFromCache(cacheKey);
-    if (cached) {
-      setFortune(cached);
-      setLoading(false);
-      setTimeout(() => setVisible(true), 80);
-      return;
-    }
-
     try {
-      const res = await fetch("/api/fortune", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mbti, zodiac, category, name }),
-      });
-      if (!res.ok) throw new Error("fetch failed");
-      const data: FortuneData = await res.json();
-      saveToCache(cacheKey, data);
+      const data = await fetchFromJson(mbti, zodiac, category as Category);
       setFortune(data);
     } catch {
-      setError("星の声が届きませんでした。もう一度お試しください。");
+      setError("星の声が届きませんでした。運勢データを準備中かもしれません。");
     } finally {
       setLoading(false);
       setTimeout(() => setVisible(true), 80);
     }
-  }, [mbti, zodiac, category, name, isValidMBTI, isValidZodiac, isValidCategory]);
+  }, [mbti, zodiac, category, isValidMBTI, isValidZodiac, isValidCategory]);
 
   useEffect(() => {
     fetchFortune();

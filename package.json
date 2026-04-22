@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate-fortunes": "npx tsx scripts/generate-fortunes.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",
@@ -22,6 +23,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
