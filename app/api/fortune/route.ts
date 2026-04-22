@@ -22,8 +22,8 @@ function dummyMonthly(mbti: string, zodiac: string, name: string): FortuneData {
     headline: `${name}さん、今月は${isN ? "直感が未来を照らす" : "積み重ねが実を結ぶ"}月でしょう。`,
     summary: `${mbti}×${zodiac}のあなたにとって、今月はひとつの転換点になるはずです。何かを手放すことで、新しいものが入ってくる準備が整うでしょう。その変化を、恐れないでください。`,
     sections: [
-      { label: "人間関係", content: "深い話ができる相手が現れるはずです。表面的なつながりよりも、本音を話せる関係を大切にしていいでしょう。" },
-      { label: "恋愛", content: "感情を素直に表現することが、今月の鍵になるはずです。言葉にしなければ伝わらないことも、あるでしょう。" },
+      { title: "人間関係", content: "深い話ができる相手が現れるはずです。表面的なつながりよりも、本音を話せる関係を大切にしていいでしょう。" },
+      { title: "恋愛", content: "感情を素直に表現することが、今月の鍵になるはずです。言葉にしなければ伝わらないことも、あるでしょう。" },
     ],
     keyword: "転換",
     luckyNumber: 3,
@@ -63,8 +63,8 @@ async function generateWithAI(
   const sectionsInstruction = category === "weekly"
     ? `"sections": []`
     : `"sections": [
-    { "label": "人間関係", "content": "内容（3〜4文。具体的なシーンや行動アドバイスを含む）" },
-    { "label": "恋愛", "content": "内容（3〜4文。具体的なシーンや行動アドバイスを含む）" }
+    { "title": "人間関係", "content": "内容（3〜4文。具体的なシーンや行動アドバイスを含む）" },
+    { "title": "恋愛", "content": "内容（3〜4文。具体的なシーンや行動アドバイスを含む）" }
   ]`;
 
   const summaryInstruction = category === "weekly"
