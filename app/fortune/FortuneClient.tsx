@@ -217,14 +217,14 @@ export default function FortuneClient({ mbti, zodiac, name, category }: Props) {
                 className="inline-block text-xs font-black px-3 py-1 rounded-full text-white mb-3"
                 style={{ backgroundColor: catColors.bg }}
               >
-                {section.title}
+                {(section as FortuneSection & { label?: string }).label ?? section.title}
               </span>
               <p className="text-sm font-bold leading-7 text-[#1a1a2e]/75">{section.content}</p>
             </div>
           ))}
 
           {/* Lucky */}
-          <div className="grid grid-cols-3 gap-3">
+          {category === "weekly" && <div className="grid grid-cols-3 gap-3">
             <div className={`${cardTint} rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.07)] text-center`}>
               <p className="text-[10px] font-black text-[#1a1a2e]/40 uppercase tracking-widest mb-1">Keyword</p>
               <p className="text-lg font-black">{fortune.keyword}</p>
@@ -237,7 +237,7 @@ export default function FortuneClient({ mbti, zodiac, name, category }: Props) {
               <p className="text-[10px] font-black text-[#1a1a2e]/40 uppercase tracking-widest mb-1">Color</p>
               <p className="text-base font-black">{fortune.luckyColor}</p>
             </div>
-          </div>
+          </div>}
 
           {/* X Share */}
           <XShareButton
