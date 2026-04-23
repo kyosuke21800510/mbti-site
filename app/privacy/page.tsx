@@ -19,15 +19,6 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="font-black text-base text-[#1a1a2e] mb-2">AIの利用について</h2>
-          <p>
-            本サービスでは、Anthropic社のClaude API（Anthropic API）を使用して占い結果を生成しています。
-            入力されたMBTIタイプ・星座・ニックネームは、占い文の生成のためにAnthropicのサーバーへ送信されます。
-            Anthropicのプライバシーポリシーについては、Anthropic社のウェブサイトをご確認ください。
-          </p>
-        </section>
-
-        <section>
           <h2 className="font-black text-base text-[#1a1a2e] mb-2">広告について</h2>
           <p>
             本サービスでは、Google AdSenseによる広告を掲載しています。
