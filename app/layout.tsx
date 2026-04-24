@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { M_PLUS_Rounded_1c } from "next/font/google";
 import Link from "next/link";
+import Script from "next/script";
 import "./globals.css";
 
 const rounded = M_PLUS_Rounded_1c({
@@ -19,6 +20,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja" className={rounded.variable}>
       <body className="min-h-screen bg-white text-[#1a1a2e] font-[family-name:var(--font-rounded)]">
+        <Script
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9901234187528885"
+          crossOrigin="anonymous"
+          strategy="beforeInteractive"
+        />
         {children}
         <footer className="py-8 text-center text-xs text-[#1a1a2e]/30 font-bold space-x-4">
           <Link href="/privacy" className="hover:text-[#1a1a2e]/60 transition-colors">
