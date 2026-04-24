@@ -32,7 +32,8 @@ export const CATEGORY_COLORS: Record<Category, { bg: string; text: string; shado
 };
 
 export interface FortuneSection {
-  title: string;
+  title?: string;
+  label?: string;
   content: string;
 }
 

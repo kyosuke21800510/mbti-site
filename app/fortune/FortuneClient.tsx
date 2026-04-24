@@ -198,30 +198,36 @@ export default function FortuneClient({ mbti, zodiac, name, category }: Props) {
 
           {/* Summary */}
           <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-gray-100">
-            <span
-              className="inline-block text-xs font-black px-3 py-1 rounded-full text-white mb-3"
-              style={{ backgroundColor: catColors.bg }}
-            >
-              総評
-            </span>
-            <p className="text-sm font-bold leading-7 text-[#1a1a2e]/75">{fortune.summary}</p>
-          </div>
-
-          {/* Sections */}
-          {fortune.sections.map((section, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-gray-100"
-            >
+            {category === "monthly" && (
               <span
                 className="inline-block text-xs font-black px-3 py-1 rounded-full text-white mb-3"
                 style={{ backgroundColor: catColors.bg }}
               >
-                {(section as FortuneSection & { label?: string }).label ?? section.title}
+                総評
               </span>
-              <p className="text-sm font-bold leading-7 text-[#1a1a2e]/75">{section.content}</p>
-            </div>
-          ))}
+            )}
+            <p className="text-sm font-bold leading-7 text-[#1a1a2e]/75">{fortune.summary}</p>
+          </div>
+
+          {/* Sections (monthly only) */}
+          {category === "monthly" && (["人間関係", "恋愛"] as const).map((label, i) => {
+            const section = fortune.sections[i];
+            if (!section) return null;
+            return (
+              <div
+                key={label}
+                className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-gray-100"
+              >
+                <span
+                  className="inline-block text-xs font-black px-3 py-1 rounded-full text-white mb-3"
+                  style={{ backgroundColor: catColors.bg }}
+                >
+                  {label}
+                </span>
+                <p className="text-sm font-bold leading-7 text-[#1a1a2e]/75">{section.content}</p>
+              </div>
+            );
+          })}
 
           {/* Lucky */}
           {category === "weekly" && <div className="grid grid-cols-3 gap-3">
