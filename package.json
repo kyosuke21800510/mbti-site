@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "generate-fortunes": "npx tsx scripts/generate-fortunes.ts"
+    "generate-fortunes": "npx tsx scripts/generate-fortunes.ts",
+    "generate-profiles": "npx tsx scripts/generate-profiles.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",
@@ -20,6 +21,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",
