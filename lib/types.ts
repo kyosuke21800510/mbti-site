@@ -1,3 +1,26 @@
+// 星座スラッグ（URLに使用する ASCII 文字）
+export const ZODIAC_SLUGS = {
+  "おひつじ座": "aries",
+  "おうし座":   "taurus",
+  "ふたご座":   "gemini",
+  "かに座":     "cancer",
+  "しし座":     "leo",
+  "おとめ座":   "virgo",
+  "てんびん座": "libra",
+  "さそり座":   "scorpio",
+  "いて座":     "sagittarius",
+  "やぎ座":     "capricorn",
+  "みずがめ座": "aquarius",
+  "うお座":     "pisces",
+} as const;
+
+export type ZodiacSlug = (typeof ZODIAC_SLUGS)[keyof typeof ZODIAC_SLUGS];
+
+// スラッグ → 日本語 逆引き
+export const SLUG_TO_ZODIAC = Object.fromEntries(
+  Object.entries(ZODIAC_SLUGS).map(([ja, slug]) => [slug, ja])
+) as Record<ZodiacSlug, string>;
+
 export const MBTI_TYPES = [
   "INTJ", "INTP", "ENTJ", "ENTP",
   "INFJ", "INFP", "ENFJ", "ENFP",

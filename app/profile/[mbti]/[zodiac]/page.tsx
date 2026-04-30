@@ -2,18 +2,20 @@
 import path from "path";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { MBTI_TYPES, ZODIAC_TYPES } from "@/lib/types";
+import { MBTI_TYPES, ZODIAC_SLUGS, SLUG_TO_ZODIAC, type ZodiacSlug } from "@/lib/types";
 
 interface ProfileData {
   catchcopy: string;
   description: string;
 }
 
-function loadProfile(mbti: string, zodiac: string): ProfileData | null {
+const VALID_SLUGS = Object.values(ZODIAC_SLUGS) as ZodiacSlug[];
+
+function loadProfile(mbti: string, zodiacJa: string): ProfileData | null {
   try {
     const filePath = path.join(process.cwd(), "public", "profiles", "profiles.json");
     const all = JSON.parse(fs.readFileSync(filePath, "utf-8")) as Record<string, ProfileData>;
-    return all[`${mbti}_${zodiac}`] ?? null;
+    return all[`${mbti}_${zodiacJa}`] ?? null;
   } catch {
     return null;
   }
@@ -21,7 +23,7 @@ function loadProfile(mbti: string, zodiac: string): ProfileData | null {
 
 export function generateStaticParams() {
   return MBTI_TYPES.flatMap((mbti) =>
-    ZODIAC_TYPES.map((zodiac) => ({ mbti, zodiac }))
+    VALID_SLUGS.map((zodiac) => ({ mbti, zodiac }))
   );
 }
 
@@ -30,14 +32,15 @@ export async function generateMetadata({
 }: {
   params: Promise<{ mbti: string; zodiac: string }>;
 }): Promise<Metadata> {
-  const { mbti, zodiac } = await params;
-  const profile = loadProfile(mbti, zodiac);
+  const { mbti, zodiac: slug } = await params;
+  const zodiacJa = SLUG_TO_ZODIAC[slug as ZodiacSlug];
+  const profile = zodiacJa ? loadProfile(mbti, zodiacJa) : null;
   const title = profile
-    ? `${profile.catchcopy}｜${mbti}×${zodiac}の特徴 | ORACLE`
-    : `${mbti}×${zodiac}の特徴 | ORACLE`;
+    ? `${profile.catchcopy}｜${mbti}×${zodiacJa}の特徴 | ORACLE`
+    : `${mbti}の特徴 | ORACLE`;
   const description = profile
     ? profile.description.slice(0, 100) + "…"
-    : `${mbti}×${zodiac}の特徴を解説します。`;
+    : `${mbti}の特徴を解説します。`;
   return {
     title,
     description,
@@ -51,11 +54,12 @@ export default async function ProfilePage({
 }: {
   params: Promise<{ mbti: string; zodiac: string }>;
 }) {
-  const { mbti, zodiac } = await params;
+  const { mbti, zodiac: slug } = await params;
+  const zodiacJa = SLUG_TO_ZODIAC[slug as ZodiacSlug];
 
   const isValid =
     (MBTI_TYPES as readonly string[]).includes(mbti) &&
-    (ZODIAC_TYPES as readonly string[]).includes(zodiac);
+    zodiacJa !== undefined;
 
   if (!isValid) {
     return (
@@ -71,8 +75,8 @@ export default async function ProfilePage({
     );
   }
 
-  const profile = loadProfile(mbti, zodiac);
-  const fortuneBase = `/fortune?mbti=${mbti}&zodiac=${encodeURIComponent(zodiac)}&name=${encodeURIComponent(`${mbti}×${zodiac}`)}`;
+  const profile = loadProfile(mbti, zodiacJa);
+  const fortuneBase = `/fortune?mbti=${mbti}&zodiac=${encodeURIComponent(zodiacJa)}&name=${encodeURIComponent(`${mbti}×${zodiacJa}`)}`;
 
   return (
     <main className="min-h-screen px-4 py-10 max-w-lg mx-auto">
@@ -82,13 +86,13 @@ export default async function ProfilePage({
           href="/"
           className="text-sm font-bold text-[#1a1a2e]/40 hover:text-[#1a1a2e] transition-colors flex items-center gap-1"
         >
-          ← 戻る
+          &larr; 戻る
         </Link>
         <Link
           href="/"
           className="text-sm font-bold text-white bg-[#1a1a2e] px-4 py-2 rounded-full hover:bg-[#1a1a2e]/80 transition-colors"
         >
-          🏠 トップへ
+          トップへ
         </Link>
       </div>
 
@@ -97,7 +101,7 @@ export default async function ProfilePage({
         <div className="inline-flex items-center gap-2 bg-[#1a1a2e] text-white px-5 py-2.5 rounded-full font-black text-sm shadow-[0_4px_16px_rgba(26,26,46,0.3)] mb-4">
           <span className="text-[#3D5AFE]">{mbti}</span>
           <span className="text-white/30">×</span>
-          <span className="text-[#FF4D8B]">{zodiac}</span>
+          <span className="text-[#FF4D8B]">{zodiacJa}</span>
         </div>
         <p className="text-sm font-bold text-[#1a1a2e]/40">キャラクター分析</p>
       </div>
@@ -127,14 +131,14 @@ export default async function ProfilePage({
               href={`${fortuneBase}&category=weekly`}
               className="flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-[#3D5AFE] text-white font-black text-sm shadow-[0_4px_16px_rgba(61,90,254,0.4)] hover:-translate-y-0.5 transition-all duration-150"
             >
-              <span>📅 今週の運勢を見る</span>
+              <span>今週の運勢を見る</span>
               <span className="opacity-60">→</span>
             </Link>
             <Link
               href={`${fortuneBase}&category=monthly`}
               className="flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-[#FF4D8B] text-white font-black text-sm shadow-[0_4px_16px_rgba(255,77,139,0.4)] hover:-translate-y-0.5 transition-all duration-150"
             >
-              <span>🌙 今月の運勢を見る</span>
+              <span>今月の運勢を見る</span>
               <span className="opacity-60">→</span>
             </Link>
           </div>

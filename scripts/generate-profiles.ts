@@ -2,13 +2,15 @@
 /**
  * scripts/generate-profiles.ts
  *
- * MBTI × 星座 の全192パターンのプロフィール特徴文を生成してJSONに保存する。
+ * MBTI x 星座 の全192パターンのプロフィール特徴文を生成してJSONに保存する。
  *
- * 実行: npx tsx scripts/generate-profiles.ts
- * 必須: ANTHROPIC_API_KEY 環境変数
+ * 実行: npm run generate-profiles
+ * 必須: ANTHROPIC_API_KEY (.env.local に設定)
+ * オプション:
+ *   TEST=1   INTJ x おひつじ座 の1件だけ生成してテスト
+ *   FORCE=1  既存データを無視して全件再生成
  *
  * 出力: public/profiles/profiles.json
- * 生成済みのエントリはスキップして途中再開できる。
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -42,11 +44,13 @@ type ProfileFile = Record<string, ProfileData>;
 
 // ---- AI生成 ----
 
-const SYSTEM_PROMPT = `MBTI×星座の組み合わせの特徴を説明する専門家。\
-この組み合わせだけが持つ固有の矛盾・強み・癖を描写すること。\
-他の組み合わせと同じ表現や切り口にならないよう注意。\
-断言口調・共感型・400字程度・日本語。\
-必ずJSON形式で返す：{"catchcopy": "○○の○○", "description": "..."}`;
+const SYSTEM_PROMPT = [
+  "MBTI×星座の組み合わせの特徴を説明する専門家。",
+  "この組み合わせだけが持つ固有の矛盾・強み・癖を描写すること。",
+  "他の組み合わせと同じ表現や切り口にならないよう注意。",
+  "断言口調・共感型・400字程度・日本語。",
+  '必ずJSON形式のみで返すこと（前後に説明文不要）: {"catchcopy": "○○の○○", "description": "..."}',
+].join("\n");
 
 async function generateProfile(
   client: Anthropic,
@@ -60,19 +64,37 @@ async function generateProfile(
     messages: [{ role: "user", content: `${zodiac}×${mbti}の人の特徴を説明して。` }],
   });
 
-  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  const text = message.content[0].type === "text" ? message.content[0].text.trim() : "";
+  if (!text) throw new Error("空のレスポンス");
+
+  // JSONブロックを抽出
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error(`JSONが見つかりません (${mbti}_${zodiac})`);
-  return JSON.parse(jsonMatch[0]) as ProfileData;
+  if (!jsonMatch) throw new Error(`JSONが見つかりません。レスポンス: ${text.slice(0, 100)}`);
+
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+  } catch (e) {
+    throw new Error(`JSON解析失敗: ${(e as Error).message}`);
+  }
+
+  if (typeof parsed.catchcopy !== "string" || typeof parsed.description !== "string") {
+    throw new Error(`不正なフィールド: ${JSON.stringify(parsed).slice(0, 100)}`);
+  }
+
+  return { catchcopy: parsed.catchcopy, description: parsed.description };
 }
 
 // ---- ファイル操作 ----
 
 function loadOrCreate(filePath: string): ProfileFile {
-  if (fs.existsSync(filePath)) {
+  if (!fs.existsSync(filePath)) return {};
+  try {
     return JSON.parse(fs.readFileSync(filePath, "utf-8")) as ProfileFile;
+  } catch {
+    console.warn("[WARN] profiles.json が破損しています。空から再開します。");
+    return {};
   }
-  return {};
 }
 
 function save(filePath: string, data: ProfileFile): void {
@@ -83,63 +105,78 @@ function save(filePath: string, data: ProfileFile): void {
 // ---- メイン ----
 
 async function main() {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("Error: ANTHROPIC_API_KEY 環境変数を設定してください");
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    console.error("[ERROR] ANTHROPIC_API_KEY が未設定です");
+    console.error("        .env.local に ANTHROPIC_API_KEY=sk-ant-... を追加してください");
     process.exit(1);
   }
+  console.log(`[INFO] API Key: ${apiKey.slice(0, 20)}...`);
 
-  const client = new Anthropic();
+  const isTest  = process.env.TEST  === "1";
+  const isForce = process.env.FORCE === "1";
+
+  const client   = new Anthropic();
   const filePath = path.join(process.cwd(), "public", "profiles", "profiles.json");
-  const data = loadOrCreate(filePath);
+  const data     = isForce ? {} : loadOrCreate(filePath);
 
-  const TOTAL = MBTI_TYPES.length * ZODIAC_TYPES.length; // 192
-  console.log("\n🔮 MBTI×星座 プロフィール生成スクリプト");
-  console.log(`  📊 総パターン数: ${TOTAL} (${MBTI_TYPES.length} MBTI × ${ZODIAC_TYPES.length} 星座)`);
-  console.log(`  📄 出力先: ${filePath}\n`);
+  const allPairs = MBTI_TYPES.flatMap((mbti) =>
+    ZODIAC_TYPES.map((zodiac) => ({ mbti, zodiac }))
+  );
+  const pairs = isTest ? [allPairs[0]] : allPairs;
+  const TOTAL = pairs.length;
 
-  let generated = 0;
-  let skipped = 0;
-  let errors = 0;
-  let count = 0;
-
-  for (const mbti of MBTI_TYPES) {
-    for (const zodiac of ZODIAC_TYPES) {
-      count++;
-      const key = `${mbti}_${zodiac}`;
-      const prefix = `[${String(count).padStart(3, " ")}/${TOTAL}] ${mbti} × ${zodiac}`;
-
-      if (data[key]) {
-        console.log(`  ✓ スキップ: ${prefix}`);
-        skipped++;
-        continue;
-      }
-
-      process.stdout.write(`  ⏳ 生成中: ${prefix} ...`);
-      try {
-        const profile = await generateProfile(client, mbti, zodiac);
-        data[key] = profile;
-        save(filePath, data); // 1件ごとに保存（途中再開に対応）
-        process.stdout.write(" ✅\n");
-        generated++;
-      } catch (err) {
-        process.stdout.write(" ❌\n");
-        console.error(`      エラー: ${(err as Error).message}`);
-        errors++;
-      }
-
-      // レート制限対策
-      await new Promise((r) => setTimeout(r, 300));
-    }
+  if (isTest) {
+    console.log("[TEST] 1件のみ生成します: INTJ x おひつじ座\n");
+  } else {
+    console.log(`[INFO] 総パターン数: ${TOTAL}`);
+    console.log(`[INFO] 出力先: ${filePath}`);
+    if (isForce) console.log("[INFO] FORCE=1: 全件再生成");
+    console.log("");
   }
 
-  console.log("\n🎉 生成完了!");
-  console.log(`  生成: ${generated} / スキップ: ${skipped} / エラー: ${errors} / 合計: ${TOTAL}`);
+  let generated = 0;
+  let skipped   = 0;
+  let errors    = 0;
+
+  for (let i = 0; i < pairs.length; i++) {
+    const { mbti, zodiac } = pairs[i];
+    const key    = `${mbti}_${zodiac}`;
+    const prefix = `[${String(i + 1).padStart(3, " ")}/${TOTAL}] ${mbti} x ${zodiac}`;
+
+    if (!isTest && !isForce && data[key]) {
+      console.log(`  skip: ${prefix}`);
+      skipped++;
+      continue;
+    }
+
+    process.stdout.write(`  gen:  ${prefix} ... `);
+    try {
+      const profile = await generateProfile(client, mbti, zodiac);
+      data[key] = profile;
+      save(filePath, data);
+      process.stdout.write("OK\n");
+      if (isTest) {
+        console.log(`\n  catchcopy:   ${profile.catchcopy}`);
+        console.log(`  description: ${profile.description.slice(0, 60)}...`);
+      }
+      generated++;
+    } catch (err) {
+      process.stdout.write("FAIL\n");
+      console.error(`  --> ${(err as Error).message}`);
+      errors++;
+    }
+
+    await new Promise((r) => setTimeout(r, 500));
+  }
+
+  console.log(`\n[DONE] generated=${generated} skipped=${skipped} errors=${errors} total=${TOTAL}`);
   if (errors > 0) {
-    console.log(`  ⚠ エラーが ${errors} 件あります。再実行するとスキップされた分から再開できます。`);
+    console.log(`[WARN] ${errors}件のエラーがあります。再実行すると続きから再開できます。`);
   }
 }
 
 main().catch((err) => {
-  console.error("Fatal:", err);
+  console.error("[FATAL]", err);
   process.exit(1);
 });
