@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { MBTI_TYPES, ZODIAC_SLUGS } from "@/lib/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://example.com";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.mbti-seiza.com";
 const ZODIAC_SLUG_VALUES = Object.values(ZODIAC_SLUGS);
 
 export default function sitemap(): MetadataRoute.Sitemap {
