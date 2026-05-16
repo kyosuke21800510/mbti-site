@@ -27,6 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         {children}
         <footer className="py-8 text-center text-xs text-[#1a1a2e]/30 font-bold space-x-4">
+          <Link href="/blog" className="hover:text-[#1a1a2e]/60 transition-colors">
+            コラム
+          </Link>
           <Link href="/privacy" className="hover:text-[#1a1a2e]/60 transition-colors">
             プライバシーポリシー
           </Link>
