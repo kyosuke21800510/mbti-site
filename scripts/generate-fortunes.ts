@@ -16,6 +16,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import dotenv from "dotenv";
 import fs from "fs";
+import { jsonrepair } from "jsonrepair";
 import path from "path";
 
 dotenv.config({ path: path.join(process.cwd(), ".env.local") });
@@ -170,7 +171,7 @@ async function generateFortune(
   const text = message.content[0].type === "text" ? message.content[0].text : "";
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error(`JSONが見つかりません (${mbti}_${zodiac}_${category})`);
-  return JSON.parse(jsonMatch[0]) as FortuneData;
+  return JSON.parse(jsonrepair(jsonMatch[0])) as FortuneData;
 }
 
 // ---- ファイル操作 ----
@@ -221,7 +222,7 @@ async function main() {
       label: "今週の運勢",
       category: "weekly",
       filePath: path.join(outputDir, `${getISOWeekKey(now)}.json`),
-      overwrite: true,
+      overwrite: !force,
     },
   ];
 
